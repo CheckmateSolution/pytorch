@@ -185,7 +185,7 @@ class UserDefinedClassVariable(UserDefinedVariable):
         try:
             obj = inspect.getattr_static(self.value, name)
         except AttributeError:
-            obj = None
+            raise_observed_exception(AttributeError, tx)
 
         if name in cmp_name_to_op_mapping and not isinstance(obj, types.FunctionType):
             return variables.GetAttrVariable(self, name, source=source)
