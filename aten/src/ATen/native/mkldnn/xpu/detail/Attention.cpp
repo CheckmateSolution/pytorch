@@ -244,7 +244,7 @@ void gpu_float_sdpa(
     const Tensor& query,
     const Tensor& key,
     const Tensor& value,
-    const std::optional<at::Tensor>& attn_mask,
+    std::optional<at::Tensor> attn_mask,
     bool is_causal,
     float softmax_scale,
     const Tensor& output) {
@@ -266,6 +266,13 @@ void gpu_float_sdpa(
   TORCH_INTERNAL_ASSERT(
       (logical_tensor_dtype != data_type::undef),
       "Only FP16/BF16/FP32 datatypes are currently supported");
+
+  // align mask dim for OneDNN ukernel
+  if (attn_mask.has_value()) {
+    for (size_t i = attn_mask->dim(); i < 4; i++) {
+      attn_mask = at::unsqueeze(*attn_mask, 0);
+    }
+  }
 
   thread_local static PartitionCache cache;
 
