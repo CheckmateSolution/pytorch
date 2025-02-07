@@ -114,8 +114,18 @@ def try_import_cutlass() -> bool:
     return False
 
 
+@functools.lru_cache(8)
 def _normalize_cuda_arch(arch: str) -> str:
-    if int(arch) >= 90:
+    if int(arch) >= 100:
+        log.warning(
+            f"Detected CUDA architecture >= 100: {arch}. We will generate operations with "
+            "GenerateSM100 (if available) and GenerateSM90. Please file an "
+            "issue for any problems and feedback. "
+        )
+
+    if int(arch) >= 100:
+        return "100"
+    elif int(arch) >= 90:
         return "90"
     elif int(arch) >= 80:
         return "80"
@@ -186,7 +196,16 @@ def _gen_ops_cached(arch, version) -> list[Any]:
     )
     manifest = cutlass_manifest.Manifest(args)
 
-    if arch == "90":
+    if arch == "100":
+        try:
+            # type: ignore[import]
+            from cutlass_generator import GenerateSM100
+
+            GenerateSM100(manifest, args.cuda_version)
+        except ImportError:
+            log.warning("Cannot find GenerateSM100. Only GenerateSM90 will be used. ")
+        cutlass_generator.GenerateSM90(manifest, args.cuda_version)
+    elif arch == "90":
         cutlass_generator.GenerateSM90(manifest, args.cuda_version)
         cutlass_generator.GenerateSM80(manifest, args.cuda_version)
     else:
