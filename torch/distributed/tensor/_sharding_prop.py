@@ -122,6 +122,10 @@ class ShardingPropagator:
             fake_args = op_schema.gen_fake_args()
             fake_kwargs = op_schema.gen_fake_kwargs()
             fake_out = op_schema.op(*fake_args, **fake_kwargs)
+            if op_schema.op == aten.convolution_backward.default:
+                print(fake_args)
+                print(fake_kwargs)
+                print(f"fake_out={fake_out}")
 
         if isinstance(fake_out, torch.Tensor):
             return TensorMeta(
